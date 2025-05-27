@@ -20,6 +20,14 @@
             base.Dispose(disposing);
         }
 
+
+
+
+
+
+
+
+
         #region Windows Form Designer generated code
 
         /// <summary>
@@ -31,11 +39,11 @@
             components = new System.ComponentModel.Container();
             picDisplay = new PictureBox();
             timer1 = new System.Windows.Forms.Timer(components);
-            trackBar1 = new TrackBar();
-            trackBar2 = new TrackBar();
+            trackBarParticleCount = new TrackBar();
+            trackBarParticleSpeed = new TrackBar();
             ((System.ComponentModel.ISupportInitialize)picDisplay).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarParticleCount).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarParticleSpeed).BeginInit();
             SuspendLayout();
             // 
             // picDisplay
@@ -52,33 +60,33 @@
             timer1.Interval = 40;
             timer1.Tick += Timer1_Tick;
             // 
-            // trackBar1
+            // trackBarParticleCount
             // 
-            trackBar1.Location = new Point(562, 12);
-            trackBar1.Name = "trackBar1";
-            trackBar1.Size = new Size(130, 56);
-            trackBar1.TabIndex = 1;
+            trackBarParticleCount.Location = new Point(562, 12);
+            trackBarParticleCount.Name = "trackBarParticleCount";
+            trackBarParticleCount.Size = new Size(130, 56);
+            trackBarParticleCount.TabIndex = 1;
             // 
-            // trackBar2
+            // trackBarParticleSpeed
             // 
-            trackBar2.Location = new Point(562, 74);
-            trackBar2.Name = "trackBar2";
-            trackBar2.Size = new Size(130, 56);
-            trackBar2.TabIndex = 2;
+            trackBarParticleSpeed.Location = new Point(562, 74);
+            trackBarParticleSpeed.Name = "trackBarParticleSpeed";
+            trackBarParticleSpeed.Size = new Size(130, 56);
+            trackBarParticleSpeed.TabIndex = 2;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(889, 351);
-            Controls.Add(trackBar2);
-            Controls.Add(trackBar1);
+            Controls.Add(trackBarParticleSpeed);
+            Controls.Add(trackBarParticleCount);
             Controls.Add(picDisplay);
             Name = "Form1";
             Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)picDisplay).EndInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarParticleCount).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarParticleSpeed).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -87,7 +95,7 @@
 
         private PictureBox picDisplay;
         private System.Windows.Forms.Timer timer1;
-        private TrackBar trackBar1;
-        private TrackBar trackBar2;
+        private TrackBar trackBarParticleCount;
+        private TrackBar trackBarParticleSpeed;
     }
 }

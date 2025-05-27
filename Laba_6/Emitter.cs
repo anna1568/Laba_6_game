@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Laba_6;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 
@@ -23,6 +24,8 @@ namespace Laba_6
 
     public class TopEmitter : Emitter
     {
+        private int scoreDelta = 0;
+
         private List<Flower> flowers = new List<Flower>();
         private List<(float X, float Y, int Radius)> flowerCenters = new List<(float, float, int)>();
 
@@ -90,36 +93,76 @@ namespace Laba_6
             double maxWidth = flower.CurrentRadius * 0.5;
             double petalOffset = centerRadius + flower.CurrentRadius * 0.33;
 
-            // Сердцевина
+            // Параметр t: 0 — базовый размер (молодой цветок), 1 — максимальный размер (расцвет)
+            float t = (flower.CurrentRadius - flower.BaseRadius) / (flower.MaxRadius - flower.BaseRadius);
+            t = Math.Clamp(t, 0f, 1f);
+
+            // Цвета сердцевины: при увядании — оранжевый, при расцветании — ярко-жёлтый
+            Color aliveCenterColor = Color.Yellow;
+            Color deadCenterColor = Color.Orange;
+            Color centerColor = InterpolateColor(deadCenterColor, aliveCenterColor, t);
+
+            // Палитры лепестков — массивы цветовых гамм
+            Color[][] palettes = new Color[][]
+            {
+        new Color[] { Color.Pink, Color.White, Color.Orange },
+        new Color[] { Color.LightBlue, Color.Blue, Color.White },
+        new Color[] { Color.Green, Color.LightGreen, Color.Yellow },
+        new Color[] { Color.Red, Color.DarkRed, Color.MediumSeaGreen },
+        new Color[] { Color.DarkRed, Color.Orange, Color.Beige }
+            };
+
+            // Коричнево-оранжевый цвет для увядающих лепестков
+            Color deadPetalColor = Color.FromArgb(180, 139, 69, 19);
+
+            // Выбираем палитру для цветка по индексу (фиксируем на время жизни)
+            int paletteIndex = flower.PetalCount % palettes.Length;
+            Color[] palette = palettes[paletteIndex];
+
+            // Функция интерполяции цвета
+            Color InterpolateColor(Color c1, Color c2, float factor)
+            {
+                int r = (int)(c1.R + (c2.R - c1.R) * factor);
+                int g = (int)(c1.G + (c2.G - c1.G) * factor);
+                int b = (int)(c1.B + (c2.B - c1.B) * factor);
+                int a = (int)(c1.A + (c2.A - c1.A) * factor);
+                return Color.FromArgb(a, r, g, b);
+            }
+
+            // ===== Сердцевина =====
             for (int i = 0; i < centerParticleCount; i++)
             {
-                double t = 2 * Math.PI * Particle.rand.NextDouble();
+                double angle = 2 * Math.PI * Particle.rand.NextDouble();
                 double r = centerRadius * Math.Sqrt(Particle.rand.NextDouble());
-                float x = flower.CenterX + (float)(r * Math.Cos(t));
-                float y = flower.CenterY + (float)(r * Math.Sin(t));
+                float x = flower.CenterX + (float)(r * Math.Cos(angle));
+                float y = flower.CenterY + (float)(r * Math.Sin(angle));
 
                 flower.Particles.Add(new ParticleColorful
                 {
                     X = x,
                     Y = y,
                     Radius = particleRadius,
-                    Color = Color.Yellow,
+                    Color = centerColor,
                     Life = 100,
                     Scale = 1f
                 });
             }
 
-            // Лепестки
+            // ===== Лепестки =====
             for (int p = 0; p < flower.PetalCount; p++)
             {
                 double angle = 2 * Math.PI * p / flower.PetalCount;
-                Color petalColor = GetRandomPetalColor();
+
+                // Выбираем цвет лепестка из палитры циклически
+                Color brightPetalColor = palette[p % palette.Length];
+                // Интерполируем цвет лепестка от коричнево-оранжевого (увядание) к яркому (расцвет)
+                Color petalColor = InterpolateColor(deadPetalColor, brightPetalColor, t);
 
                 for (int i = 0; i < particlesPerPetal; i++)
                 {
-                    double t = Particle.rand.NextDouble();
-                    double distance = t * petalLength;
-                    double widthFactor = Math.Sin(Math.PI * t);
+                    double tParam = Particle.rand.NextDouble();
+                    double distance = tParam * petalLength;
+                    double widthFactor = Math.Sin(Math.PI * tParam);
                     double offset = (Particle.rand.NextDouble() - 0.5) * maxWidth * widthFactor;
 
                     double localX = distance;
@@ -144,6 +187,90 @@ namespace Laba_6
             }
         }
 
+
+        private void CreateExplosionParticles(Flower flower)
+        {
+            int explosionParticleCount = 50; // количество частиц взрыва
+            Random rand = Particle.rand;
+
+            // Цвета лепестков цветка (как в генерации лепестков)
+            Color[][] palettes = new Color[][]
+            {
+        new Color[] { Color.Pink, Color.White, Color.Orange },
+        new Color[] { Color.LightBlue, Color.Blue, Color.White },
+        new Color[] { Color.Green, Color.LightGreen, Color.Yellow },
+        new Color[] { Color.Red, Color.DarkRed, Color.MediumSeaGreen },
+        new Color[] { Color.DarkRed, Color.Orange, Color.Beige }
+            };
+            int paletteIndex = flower.PetalCount % palettes.Length;
+            Color[] palette = palettes[paletteIndex];
+
+            for (int i = 0; i < explosionParticleCount; i++)
+            {
+                double angle = 2 * Math.PI * rand.NextDouble();
+                float speed = 3f + (float)rand.NextDouble() * 3f;
+
+                float sx = (float)(Math.Cos(angle) * speed);
+                float sy = (float)(Math.Sin(angle) * speed);
+
+                // Выбираем случайный цвет из палитры лепестков
+                Color color = palette[rand.Next(palette.Length)];
+
+                // Добавляем частицу в общий список particles (нужно, чтобы класс TopEmitter имел доступ к нему)
+                particles.Add(new ParticleColorful
+                {
+                    X = flower.CenterX,
+                    Y = flower.CenterY,
+                    Radius = Math.Max(2, (int)flower.CurrentRadius / 10),
+                    Color = color,
+                    Life = 80 + rand.Next(40),
+                    SpeedX = sx,
+                    SpeedY = sy
+                });
+            }
+        }
+
+
+        private Color GetFlowerColor(Flower flower, bool isCenter)
+        {
+            // Отношение роста: 0 = базовый размер, 1 = максимальный
+            float t = (flower.CurrentRadius - flower.BaseRadius) / (flower.MaxRadius - flower.BaseRadius);
+            t = Math.Clamp(t, 0f, 1f);
+
+            if (isCenter)
+            {
+                // Центр: от ярко-жёлтого до тусклого коричневого
+                Color aliveColor = Color.Yellow;
+                Color deadColor = Color.FromArgb(150, 100, 50, 0); // коричнево-оранжевый тусклый
+
+                // Чем ближе к смерти (t близко к 0), тем ближе к deadColor
+                // Чем ближе к расцветанию (t близко к 1), тем ближе к aliveColor
+                return InterpolateColor(deadColor, aliveColor, t);
+            }
+            else
+            {
+                // Лепестки: от ярких цветов к тусклым коричневым
+                Color[] brightColors = { Color.Pink, Color.Orange, Color.White };
+                Color deadColor = Color.FromArgb(150, 100, 50, 0);
+
+                // Выбираем яркий цвет случайно (можно фиксировать для цветка)
+                Color brightColor = brightColors[flower.PetalCount % brightColors.Length];
+
+                return InterpolateColor(deadColor, brightColor, t);
+            }
+        }
+
+        // Линейная интерполяция цвета
+        private Color InterpolateColor(Color c1, Color c2, float t)
+        {
+            int r = (int)(c1.R + (c2.R - c1.R) * t);
+            int g = (int)(c1.G + (c2.G - c1.G) * t);
+            int b = (int)(c1.B + (c2.B - c1.B) * t);
+            int a = (int)(c1.A + (c2.A - c1.A) * t);
+            return Color.FromArgb(a, r, g, b);
+        }
+
+
         private void UpdateParticlesList()
         {
             particles.Clear();
@@ -163,9 +290,9 @@ namespace Laba_6
 
             foreach (var flower in flowers)
             {
-                bool touched = false;
+                // Счётчик частиц воды, попавших на цветок
+                int hitCount = 0;
 
-                // Проверяем, касается ли цветок вода
                 foreach (var wp in waterParticles)
                 {
                     float dx = wp.X - flower.CenterX;
@@ -174,44 +301,45 @@ namespace Laba_6
 
                     if (dist < flower.CurrentRadius + 10)
                     {
-                        touched = true;
-                        break;
+                        hitCount++;
                     }
                 }
 
-                flower.Growing = touched;
-
-                if (flower.Growing)
+                if (hitCount > 0)
                 {
-                    // Растём с шагом 0.15, не превышая MaxRadius
-                    flower.CurrentRadius = Math.Min(flower.CurrentRadius + 0.40f, flower.MaxRadius);
+                    flower.Growing = true;
 
-                    // Если достигли максимального размера — цветок исчезает и создаётся новый
+                    // Увеличиваем размер пропорционально количеству частиц,
+                    // например, каждая частица даёт прирост 0.02f
+                    float growthAmount = 0.02f * hitCount;
+
+                    flower.CurrentRadius = Math.Min(flower.CurrentRadius + growthAmount, flower.MaxRadius);
+
                     if (flower.CurrentRadius >= flower.MaxRadius)
                     {
                         flowersToRemove.Add(flower);
-                        continue; // переходим к следующему цветку
+                        continue;
                     }
-
-                    GenerateFlowerParticles(flower);
                 }
+
                 else
                 {
-                    // Уменьшаемся с шагом 0.05, не меньше половины базового размера
+                    flower.Growing = false;
+
+                    // Уменьшаем размер, если нет попаданий воды
                     flower.CurrentRadius -= 0.05f;
 
                     if (flower.CurrentRadius <= flower.BaseRadius * 0.5f)
                     {
-                        // Если слишком маленький — удаляем и создаём новый цветок
                         flowersToRemove.Add(flower);
                         continue;
                     }
-
-                    GenerateFlowerParticles(flower);
                 }
+
+                GenerateFlowerParticles(flower);
             }
 
-            // Удаляем отмеченные цветы и создаём новые
+            // Удаляем выросшие и уменьшившиеся цветы, создаём новые
             foreach (var flower in flowersToRemove)
             {
                 flowers.Remove(flower);
@@ -256,7 +384,6 @@ namespace Laba_6
 
             UpdateParticlesList();
         }
-
 
     }
 }
